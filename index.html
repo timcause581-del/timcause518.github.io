@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMS 後台管理系統</title>
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* 設定 Inter 字體，提供清晰現代感 */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFFFFF; /* 白色背景 */
+            color: #333333; /* 預設文字顏色為深灰 */
+        }
+
+        /* 自定義淺藍色 */
+        .bg-custom-blue {
+            background-color: #007BFF; /* 主要強調色 */
+        }
+        .text-custom-blue {
+            color: #007BFF;
+        }
+        .border-custom-blue {
+            border-color: #007BFF;
+        }
+        .hover\:bg-custom-blue-dark:hover {
+            background-color: #0056b3; /* 懸停時深一點 */
+        }
+        .active-nav-link {
+            background-color: #E0F2FE; /* 淺藍色背景 */
+            color: #007BFF; /* 藍色文字 */
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.3); /* 活躍連結的光暈效果 */
+        }
+
+        /* 元素背景與邊框調整 */
+        .bg-card-light {
+            background-color: #F8F8F8; /* 卡片和區塊的淺色背景 */
+        }
+        .border-light-blue {
+            border-color: #ADD8E6; /* 淺藍色邊框 */
+        }
+        .focus\:ring-blue-glow:focus {
+            --tw-ring-color: rgba(0, 123, 255, 0.3); /* 輸入框焦點光暈 */
+        }
+
+        /* 訂單狀態標籤顏色 */
+        .status-confirmed {
+            background-color: rgba(40, 167, 69, 0.1); /* 綠色，帶透明度 */
+            color: #28A745; /* 亮綠色文字 */
+        }
+        .status-pending {
+            background-color: rgba(255, 193, 7, 0.1); /* 黃色，帶透明度 */
+            color: #FFC107; /* 亮黃色文字 */
+        }
+        .status-checkedin {
+            background-color: rgba(23, 162, 184, 0.1); /* 藍綠色，帶透明度 */
+            color: #17A2B8; /* 亮藍綠色文字 */
+        }
+        .status-cancelled {
+            background-color: rgba(220, 53, 69, 0.1); /* 紅色，帶透明度 */
+            color: #DC3545; /* 亮紅色文字 */
+        }
+
+        /* 表格行懸停效果 */
+        .table-row-hover:hover {
+            background-color: #EFEFEF; /* 懸停時的淺色效果 */
+        }
+
+        /* Modal specific styles */
+        .modal {
+            background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
+            backdrop-filter: blur(3px); /* 模糊效果 */
+        }
+        .modal-content {
+            background-color: #FFFFFF; /* Modal 內容背景色 */
+            border: 1px solid #ADD8E6; /* 淺藍色邊框 */
+            color: #333333; /* 文字顏色 */
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 767px) {
+            .room-assignment-cell {
+                min-height: 60px; /* Smaller height for mobile */
+                font-size: 0.65rem; /* Smaller font for mobile */
+                padding: 0.25rem;
+            }
+            .room-assignment-room-number {
+                 padding: 0.5rem 0.25rem;
+                 font-size: 0.7rem;
+            }
+            .room-assignment-room-number div:last-child {
+                font-size: 0.55rem;
+            }
+            .room-assignment-grid {
+                grid-template-columns: 80px repeat(31, minmax(50px, 1fr)); /* Adjust columns for mobile */
+            }
+            .quick-select-controls .flex {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            .quick-select-controls input,
+            .quick-select-controls select {
+                width: 100%;
+            }
+            .day-checkbox-group {
+                flex-wrap: wrap; /* Allow wrapping on small screens */
+            }
+            .day-checkbox-group label {
+                margin-right: 0.5rem; /* Adjust spacing */
+            }
+        }
+
+        /* 排房日曆特定樣式 (訂單預定功能) */
+        .room-assignment-grid {
+            display: grid;
+            grid-template-columns: 120px repeat(31, minmax(100px, 1fr)); /* 第一列為房間號，後續為日期，每個日期至少100px */
+            gap: 1px;
+            background-color: #ADD8E6; /* 淺藍色網格線顏色 */
+            overflow-x: auto; /* 允許橫向滾動 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 輕微陰影 */
+        }
+        .room-assignment-header-cell {
+            background-color: #E0F2FE; /* 淺藍色 */
+            color: #333333;
+            padding: 0.75rem 0.5rem;
+            font-weight: bold;
+            text-align: center;
+            position: sticky; /* 凍結表頭 */
+            left: 0;
+            z-index: 10;
+        }
+        .room-assignment-date-header {
+            background-color: #E0F2FE; /* 淺藍色 */
+            color: #333333;
+            padding: 0.75rem 0.25rem;
+            font-weight: bold;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+        .room-assignment-cell {
+            background-color: #FFFFFF; /* 白色背景 */
+            min-height: 100px; /* 房間日曆格子高度加大，以容納更多資訊 */
+            padding: 0.5rem; /* 增加內距 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem; /* 字體稍大 */
+            line-height: 1.3; /* 調整行高 */
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease; /* 新增 transform */
+            text-align: center;
+            overflow: hidden; /* 防止內容溢出 */
+            white-space: normal; /* 允許文字換行 */
+            word-break: break-word; /* 長單詞可換行 */
+            border-radius: 4px; /* 輕微圓角 */
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05); /* 輕微內陰影模擬邊框 */
+        }
+        .room-assignment-cell:hover {
+            background-color: #F0F8FF; /* 懸停時的更淺藍色效果 */
+            transform: translateY(-2px); /* 輕微上浮效果 */
+            box-shadow: inset 0 0 0 1px #90CAF9, 0 2px 5px rgba(0, 123, 255, 0.1); /* 淺藍色邊框和輕微陰影 */
+        }
+        .room-assignment-cell.occupied {
+            background-color: rgba(220, 53, 69, 0.08); /* 已佔用顏色 - 淺紅 */
+            color: #DC3545; /* 文字顏色 - 紅 */
+            border: 1px solid rgba(220, 53, 69, 0.3); /* 輕微紅邊框 */
+        }
+        .room-assignment-cell.available {
+            background-color: rgba(40, 167, 69, 0.08); /* 空閒顏色 - 淺綠 */
+            color: #28A745; /* 文字顏色 - 綠 */
+            border: 1px solid rgba(40, 167, 69, 0.3); /* 輕微綠邊框 */
+        }
+        .room-assignment-room-number {
+            background-color: #F8F8F8; /* 淺色背景 */
+            padding: 0.75rem 0.5rem;
+            font-weight: bold;
+            color: #333333;
+            text-align: center;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            border-right: 1px solid #ADD8E6; /* 垂直分隔線 */
+        }
+        .room-assignment-room-number-header {
+            background-color: #E0F2FE; /* 表格左上角淺藍色格子 */
+            position: sticky;
+            left: 0;
+            z-index: 15; /* 確保在滾動時覆蓋其他元素 */
+            border-right: 1px solid #ADD8E6; /* 垂直分隔線 */
+        }
+
+        /* 表單元素淺色調整 */
+        .bg-input-light {
+            background-color: #FFFFFF; /* 輸入框和選單背景為白色 */
+            color: #333333;
+            border-color: #D1D5DB; /* 淺灰邊框 */
+        }
+        .bg-input-light:focus {
+            border-color: #007BFF; /* 焦點時藍色邊框 */
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2); /* 藍色光暈 */
+        }
+        /* For disabled/readonly inputs */
+        .bg-gray-800 { /* This class exists from previous version, adapting it for light theme */
+            background-color: #E0E0E0 !important; /* 更淺的禁用背景 */
+            color: #666666 !important; /* 禁用文字顏色 */
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- 頂部導航欄 -->
+    <header class="bg-card-light shadow-lg p-4 flex justify-between items-center z-10 border-b border-light-blue">
+        <div class="flex items-center">
+            <button id="menu-toggle" class="lg:hidden text-gray-700 focus:outline-none mr-4">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <h1 class="text-2xl font-bold text-custom-blue tracking-wider">PMS <span class="text-gray-700">後台系統</span></h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-gray-600 hidden md:block">操作員: 張三</span>
+            <button class="bg-gray-200 text-gray-800 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">登出</button>
+        </div>
+    </header>
+
+    <!-- 主內容區域 -->
+    <div class="flex flex-1">
+        <!-- 側邊導航欄 (適用於大螢幕 & 手機展開時) -->
+        <nav id="sidebar" class="bg-gray-100 text-gray-800 w-64 p-4 flex-shrink-0
+                                 transform -translate-x-full lg:translate-x-0
+                                 transition-transform duration-300 ease-in-out
+                                 lg:relative fixed h-full z-20 border-r border-light-blue">
+            <ul class="space-y-3">
+                <li>
+                    <a href="#dashboard" id="nav-dashboard" class="flex items-center px-4 py-2 rounded-md active-nav-link hover:bg-blue-100 transition-all duration-200">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        <span>儀表板</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#room-types" id="nav-room-types" class="flex items-center px-4 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200">
+                        <i class="fas fa-bed mr-3"></i>
+                        <span>房型管理</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#room-projects" id="nav-project-settings" class="flex items-center px-4 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200">
+                        <i class="fas fa-project-diagram mr-3"></i>
+                        <span>專案設定</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#room-assignment" id="nav-room-assignment" class="flex items-center px-4 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200">
+                        <i class="fas fa-th-list mr-3"></i>
+                        <span>訂單預定</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#hotel-info" id="nav-hotel-info" class="flex items-center px-4 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200">
+                        <i class="fas fa-hotel mr-3"></i>
+                        <span>飯店資料</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#settings" id="nav-settings" class="flex items-center px-4 py-2 rounded-md hover:bg-blue-100 transition-colors duration-200">
+                        <i class="fas fa-cog mr-3"></i>
+                        <span>系統設定</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- 主要內容區塊 -->
+        <main class="flex-1 p-4 lg:p-8 overflow-y-auto">
+            <!-- 儀表板內容 -->
+            <div id="content-dashboard" class="content-section">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">儀表板</h2>
+
+                <!-- 數據概覽卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-card-light rounded-lg shadow-md p-6 flex flex-col items-start border border-light-blue">
+                        <div class="text-gray-600 text-sm mb-2">本日入住</div>
+                        <div class="text-4xl font-bold text-custom-blue">12</div>
+                        <p class="text-sm text-gray-600 mt-2">相較昨日 <span class="text-green-600">+5%</span></p>
+                    </div>
+                    <div class="bg-card-light rounded-lg shadow-md p-6 flex flex-col items-start border border-light-blue">
+                        <div class="text-gray-600 text-sm mb-2">本日退房</div>
+                        <div class="text-4xl font-bold text-gray-800">8</div>
+                        <p class="text-sm text-gray-600 mt-2">相較昨日 <span class="text-red-600">-2%</span></p>
+                    </div>
+                    <div class="bg-card-light rounded-lg shadow-md p-6 flex flex-col items-start border border-light-blue">
+                        <div class="text-gray-600 text-sm mb-2">待處理訂單</div>
+                        <div class="text-4xl font-bold text-yellow-600">5</div>
+                        <p class="text-sm text-gray-600 mt-2">急需處理</p>
+                    </div>
+                    <div class="bg-card-light rounded-lg shadow-md p-6 flex flex-col items-start border border-light-blue">
+                        <div class="text-gray-600 text-sm mb-2">總營收 (月)</div>
+                        <div class="text-4xl font-bold text-custom-blue">$85,000</div>
+                        <p class="text-sm text-gray-600 mt-2">目標達成 <span class="text-green-600">70%</span></p>
+                    </div>
+                </div>
+
+                <!-- 訂單概覽表格 (儀表板上的精簡版) -->
+                <div class="bg-card-light rounded-lg shadow-md p-6 border border-light-blue">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800">近期訂單</h3>
+                        <button id="add-order-dashboard-btn" class="bg-custom-blue text-white px-4 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 flex items-center focus:outline-none focus:ring-2 focus:ring-blue-glow">
+                            <i class="fas fa-plus mr-2"></i> 新增訂單
+                        </button>
+                    </div>
+
+                    <!-- 訂單篩選/搜尋 -->
+                    <div class="mb-4 flex flex-col md:flex-row gap-4">
+                        <input type="text" placeholder="搜尋訂單號/姓名..." class="flex-1 bg-input-light text-gray-800 border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-glow">
+                        <select class="bg-input-light text-gray-800 border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-glow">
+                            <option value="">所有狀態</option>
+                            <option value="confirmed">已確認</option>
+                            <option value="pending">待付款</option>
+                            <option value="checkedin">已入住</option>
+                            <option value="cancelled">已取消</option>
+                        </select>
+                    </div>
+
+                    <!-- 訂單列表 - 手機版卡片式 -->
+                    <div id="dashboard-order-cards-mobile" class="md:hidden space-y-4">
+                        <!-- 訂單卡片範例 1: 已確認 -->
+                        <div class="bg-gray-100 rounded-lg shadow-sm p-4 border border-light-blue">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-semibold text-gray-800">#ORD00123</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full status-confirmed">已確認</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-1">房客: 王小明</div>
+                            <div class="text-sm text-gray-600 mb-1">房型: 豪華雙人房</div>
+                            <div class="text-sm text-gray-600 mb-1">入住: 2024-08-15</div>
+                            <div class="text-sm text-gray-600">退房: 2024-08-18</div>
+                            <button class="mt-3 bg-custom-blue text-white px-3 py-1 text-sm rounded-md w-full hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">查看詳情</button>
+                        </div>
+                        <!-- 訂單卡片範例 2: 待付款 -->
+                        <div class="bg-gray-100 rounded-lg shadow-sm p-4 border border-light-blue">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-semibold text-gray-800">#ORD00124</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full status-pending">待付款</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-1">房客: 林大華</div>
+                            <div class="text-sm text-gray-600 mb-1">房型: 標準單人房</div>
+                            <div class="text-sm text-gray-600 mb-1">入住: 2024-08-16</div>
+                            <div class="text-sm text-gray-600">退房: 2024-08-17</div>
+                            <button class="mt-3 bg-custom-blue text-white px-3 py-1 text-sm rounded-md w-full hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">查看詳情</button>
+                        </div>
+                        <!-- 訂單卡片範例 3: 已入住 -->
+                        <div class="bg-gray-100 rounded-lg shadow-sm p-4 border border-light-blue">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-semibold text-gray-800">#ORD00125</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full status-checkedin">已入住</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-1">房客: 陳小芳</div>
+                            <div class="text-sm text-gray-600 mb-1">房型: 行政套房</div>
+                            <div class="text-sm text-gray-600 mb-1">入住: 2024-08-10</div>
+                            <div class="text-sm text-gray-600">退房: 2024-08-13</div>
+                            <button class="mt-3 bg-custom-blue text-white px-3 py-1 text-sm rounded-md w-full hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">查看詳情</button>
+                        </div>
+                    </div>
+
+                    <!-- 訂單列表 - 大螢幕表格式 -->
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-300 rounded-lg overflow-hidden">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        訂單號
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        房客姓名
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        房型
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        入住日期
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        退房日期
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        總金額
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        狀態
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        操作
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-order-table-desktop" class="bg-card-light divide-y divide-gray-200">
+                                <!-- 訂單行範例 1: 已確認 -->
+                                <tr class="table-row-hover">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                                        #ORD00123
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        王小明
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        豪華雙人房
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        2024-08-15
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        2024-08-18
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        $3,500
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full status-confirmed">
+                                            已確認
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="#" class="text-custom-blue hover:text-custom-blue-dark mr-4">編輯</a>
+                                        <a href="#" class="text-gray-600 hover:text-gray-800">刪除</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 房型管理內容 -->
+            <div id="content-room-types" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">房型管理</h2>
+
+                <div class="bg-card-light rounded-lg shadow-md p-6 border border-light-blue">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800">所有房型</h3>
+                        <!-- 新增房型按鈕，打開 modal -->
+                        <button id="add-room-btn" class="bg-custom-blue text-white px-4 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 flex items-center focus:outline-none focus:ring-2 focus:ring-blue-glow">
+                            <i class="fas fa-plus mr-2"></i> 新增房型
+                        </button>
+                    </div>
+
+                    <!-- 房型列表 - 手機版卡片式 -->
+                    <div id="room-cards-mobile" class="md:hidden space-y-4">
+                        <!-- 房型卡片範例 1 -->
+                        <div class="room-item bg-gray-100 rounded-lg shadow-sm p-4 border border-light-blue">
+                            <div class="mb-2">
+                                <img src="https://placehold.co/400x200/007BFF/ffffff?text=豪華雙人房" alt="豪華雙人房" class="rounded-md mb-2 w-full h-32 object-cover border border-light-blue">
+                                <span class="font-semibold text-gray-800 text-lg room-name">豪華雙人房</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-1">容納人數: <span class="room-capacity">2</span></div>
+                            <div class="text-sm text-gray-600 mb-1">價格: <span class="font-bold text-custom-blue room-price">$3,500 / 晚</span></div>
+                            <div class="text-sm text-gray-600 mb-2 room-description">描述: 寬敞舒適，景觀極佳。</div>
+                            <div class="flex space-x-2 mt-3">
+                                <button class="bg-custom-blue text-white px-3 py-1 text-sm rounded-md flex-1 hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">編輯</button>
+                                <button class="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded-md flex-1 hover:bg-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">刪除</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 房型列表 - 大螢幕表格式 -->
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        房型名稱
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        圖片
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        容納人數
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        價格 (每晚)
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        描述
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        操作
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="room-table-desktop" class="bg-card-light divide-y divide-gray-200">
+                                <!-- 房型行範例 1 -->
+                                <tr class="room-item table-row-hover">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 room-name">
+                                        豪華雙人房
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <img src="https://placehold.co/100x50/007BFF/ffffff?text=圖片" alt="豪華雙人房圖片" class="rounded-md w-24 h-auto border border-light-blue room-image">
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 room-capacity">
+                                        2
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-custom-blue font-bold room-price">
+                                        $3,500
+                                    </td>
+                                    <td class="px-6 py-4 max-w-xs overflow-hidden text-ellipsis text-sm text-gray-700 room-description">
+                                        寬敞舒適的雙人房，配有獨立衛浴和城市景觀。
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button onclick="openAddRoomModal(${JSON.stringify(sampleRoomTypes[0]).replace(/"/g, '&quot;')})" class="text-custom-blue hover:text-custom-blue-dark mr-4">編輯</button>
+                                        <button onclick="deleteRoomType('${sampleRoomTypes[0].name}')" class="text-gray-600 hover:text-gray-800">刪除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 飯店資料內容 (已新增資料建立功能) -->
+            <div id="content-hotel-info" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">飯店資料</h2>
+                <div class="bg-card-light rounded-lg shadow-md p-6 border border-light-blue">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6">飯店基本資料</h3>
+                    <form id="hotel-info-form" class="space-y-4">
+                        <div>
+                            <label for="hotel-name" class="block text-gray-700 text-sm font-bold mb-2">飯店名稱:</label>
+                            <input type="text" id="hotel-name" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：科技之星飯店" required>
+                        </div>
+                        <div>
+                            <label for="hotel-address" class="block text-gray-700 text-sm font-bold mb-2">地址:</label>
+                            <input type="text" id="hotel-address" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：台北市信義區科技大道1號" required>
+                        </div>
+                        <div>
+                            <label for="hotel-phone" class="block text-gray-700 text-sm font-bold mb-2">聯絡電話:</label>
+                            <input type="tel" id="hotel-phone" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：+886-2-12345678">
+                        </div>
+                        <div>
+                            <label for="hotel-email" class="block text-gray-700 text-sm font-bold mb-2">電子郵件:</label>
+                            <input type="email" id="hotel-email" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：info@techstarhotel.com">
+                        </div>
+                        <div>
+                            <label for="hotel-description" class="block text-gray-700 text-sm font-bold mb-2">描述:</label>
+                            <textarea id="hotel-description" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow h-24 resize-y" placeholder="簡要描述飯店特色和服務..."></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="hotel-total-rooms" class="block text-gray-700 text-sm font-bold mb-2">總房間數:</label>
+                                <input type="number" id="hotel-total-rooms" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：150" min="0">
+                            </div>
+                            <div>
+                                <label for="hotel-founding-year" class="block text-gray-700 text-sm font-bold mb-2">成立年份:</label>
+                                <input type="number" id="hotel-founding-year" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：2020" min="1900" max="2099">
+                            </div>
+                        </div>
+                        <div class="flex justify-end mt-6">
+                            <button type="submit" class="bg-custom-blue text-white px-6 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">儲存資料</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 專案設定內容 (已更新) -->
+            <div id="content-room-projects" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">專案設定</h2>
+                <div class="bg-card-light rounded-lg shadow-md p-6 border border-light-blue">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6">新增/編輯專案</h3>
+                    <form id="project-settings-form" class="space-y-4">
+                        <div>
+                            <label for="project-name" class="block text-gray-700 text-sm font-bold mb-2">專案名稱:</label>
+                            <input type="text" id="project-name" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：聖誕節特惠專案" required>
+                        </div>
+                        <div>
+                            <label for="deposit-percentage" class="block text-gray-700 text-sm font-bold mb-2">訂金百分比 (%):</label>
+                            <input type="number" id="deposit-percentage" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：30" min="0" max="100" required>
+                            <p class="text-xs text-gray-500 mt-1">請輸入 0 到 100 之間的數字。</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">平日定義:</label>
+                            <div class="day-checkbox-group flex flex-wrap gap-x-4 gap-y-2 mb-4">
+                                <!-- Days 0-6: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday -->
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekday-days" value="1" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週一</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekday-days" value="2" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週二</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekday-days" value="3" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週三</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekday-days" value="4" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週四</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekday-days" value="5" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週五</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekday-days" value="6" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週六</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekday-days" value="0" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週日</span>
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-500">請勾選此專案中屬於平日的星期。</p>
+                        </div>
+                         <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">假日定義:</label>
+                            <div class="day-checkbox-group flex flex-wrap gap-x-4 gap-y-2 mb-4">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekend-days" value="1" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週一</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekend-days" value="2" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週二</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekend-days" value="3" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週三</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekend-days" value="4" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週四</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekend-days" value="5" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週五</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekend-days" value="6" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週六</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="weekend-days" value="0" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                                    <span class="ml-2 text-gray-700">週日</span>
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-500">請勾選此專案中屬於假日的星期。</p>
+                        </div>
+
+
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">適用房型:</label>
+                            <div id="project-room-types-checkboxes" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                <!-- Room type checkboxes will be populated here by JS -->
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">勾選房型以設定其在此專案中的平日/假日價格。</p>
+                        </div>
+
+                        <div id="dynamic-room-type-pricing" class="space-y-4 border border-light-blue rounded-md p-4 bg-gray-50 hidden">
+                            <h4 class="text-lg font-bold text-gray-800 mb-4">各房型價格設定 (專案內基礎價格)</h4>
+                            <!-- Dynamic price inputs for each selected room type go here -->
+                        </div>
+
+
+                        <div class="border border-light-blue rounded-md p-4">
+                            <h4 class="text-lg font-bold text-gray-800 mb-4">國定假日/特殊日期區間價格設定</h4>
+                            <div class="flex flex-col md:flex-row items-end space-x-0 md:space-x-2 space-y-2 md:space-y-0 mb-4">
+                                <div class="flex-1 w-full">
+                                    <label for="special-range-start" class="block text-gray-700 text-sm font-bold mb-2">開始日期:</label>
+                                    <input type="date" id="special-range-start" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow">
+                                </div>
+                                <div class="flex-1 w-full">
+                                    <label for="special-range-end" class="block text-gray-700 text-sm font-bold mb-2">結束日期:</label>
+                                    <input type="date" id="special-range-end" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow">
+                                </div>
+                                <button type="button" id="add-special-date-range-trigger" class="bg-custom-blue text-white px-4 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow w-full md:w-auto">
+                                    新增日期區間價格
+                                </button>
+                            </div>
+                            <div id="special-date-ranges-list" class="space-y-2">
+                                <!-- Added special date ranges will be listed here -->
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mt-6">
+                            <button type="submit" class="bg-custom-blue text-white px-6 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">儲存專案</button>
+                        </div>
+                    </form>
+
+                    <h3 class="text-2xl font-bold text-gray-800 mt-10 mb-6">現有專案列表</h3>
+                    <div id="existing-projects-list" class="space-y-4">
+                        <!-- Existing projects will be listed here -->
+                        <!-- If sampleProjects is empty, this will show: "目前沒有設定任何專案。" -->
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- 訂單預定內容 (原排房功能，已更新) -->
+            <div id="content-room-assignment" class="content-section hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4 md:mb-0">訂單預定</h2>
+                    <div class="quick-select-controls flex items-center space-x-2 w-full md:w-auto">
+                        <input type="date" id="calendar-jump-date" class="bg-input-light border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-glow max-w-[150px]">
+                        <select id="room-type-filter" class="bg-input-light border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-glow max-w-[150px]">
+                            <option value="all">所有房型</option>
+                            <!-- Room types populated by JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="bg-card-light rounded-lg shadow-md p-6 border border-light-blue">
+                    <!-- 日曆導航 -->
+                    <div class="flex justify-between items-center mb-6">
+                        <button id="room-assign-prev-month" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h3 id="room-assign-current-month-year" class="text-2xl font-bold text-gray-800"></h3>
+                        <button id="room-assign-next-month" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 排房日曆網格 -->
+                    <div id="room-assignment-grid-container" class="room-assignment-grid rounded-lg overflow-hidden">
+                        <!-- 日曆表頭將由 JavaScript 生成 -->
+                    </div>
+
+                    <!-- 圖例說明 -->
+                    <div class="mt-6 text-gray-600 text-sm flex flex-wrap justify-center gap-4">
+                        <div class="flex items-center">
+                            <span class="room-status-indicator status-available"></span>
+                            <span>空閒</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="room-status-indicator status-booked"></span>
+                            <span>已預訂</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系統設定內容 (待實現) -->
+            <div id="content-settings" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">系統設定</h2>
+                <div class="bg-card-light rounded-lg shadow-md p-6 h-64 flex items-center justify-center border border-light-blue">
+                    <p class="text-gray-600">系統設定頁面內容將會在此顯示。</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- 新增房型 Modal -->
+    <div id="add-room-modal" class="modal fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-card-light rounded-lg shadow-xl p-8 w-11/12 md:w-2/3 lg:w-1/2 max-w-lg relative">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">新增房型</h3>
+            <form id="add-room-form" class="space-y-4">
+                <div>
+                    <label for="room-name" class="block text-gray-700 text-sm font-bold mb-2">房型名稱:</label>
+                    <input type="text" id="room-name" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：豪華雙人房" required>
+                </div>
+                <div>
+                    <label for="room-image-url" class="block text-gray-700 text-sm font-bold mb-2">圖片 URL:</label>
+                    <input type="url" id="room-image-url" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：https://placehold.co/400x200/007BFF/ffffff?text=新房型">
+                    <p class="text-xs text-gray-500 mt-1">目前使用佔位符圖片，實際應用可上傳圖片。</p>
+                </div>
+                <div>
+                    <label for="room-capacity" class="block text-gray-700 text-sm font-bold mb-2">容納人數:</label>
+                    <input type="number" id="room-capacity" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：2" min="1" required>
+                </div>
+                <div>
+                    <label for="room-price" class="block text-gray-700 text-sm font-bold mb-2">價格 (每晚):</label>
+                    <input type="number" id="room-price" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：3500" min="0" required>
+                </div>
+                <div>
+                    <label for="room-description" class="block text-gray-700 text-sm font-bold mb-2">描述:</label>
+                    <textarea id="room-description" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow h-24 resize-y" placeholder="簡要描述房型的特色..."></textarea>
+                </div>
+                <div id="room-count-section" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="room-count" class="block text-gray-700 text-sm font-bold mb-2">房間總數:</label>
+                        <input type="number" id="room-count" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：5" min="1" required value="1">
+                    </div>
+                    <div>
+                        <label for="starting-room-number" class="block text-gray-700 text-sm font-bold mb-2">起始房號:</label>
+                        <input type="text" id="starting-room-number" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：101" required>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-add-room" class="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">取消</button>
+                    <button type="submit" class="bg-custom-blue text-white px-6 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">儲存房型</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 新增/編輯訂單 Modal (共用同一個 modal) -->
+    <div id="add-order-modal" class="modal fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-card-light rounded-lg shadow-xl p-8 w-11/12 md:w-2/3 lg:w-1/2 max-w-lg relative">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6" id="add-order-modal-title">新增訂單</h3>
+            <form id="add-order-form" class="space-y-4">
+                <input type="hidden" id="order-edit-id"> <!-- Hidden field to store order ID for editing -->
+                <div>
+                    <label for="order-guest-name" class="block text-gray-700 text-sm font-bold mb-2">房客姓名:</label>
+                    <input type="text" id="order-guest-name" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：張美麗" required>
+                </div>
+                <div>
+                    <label for="order-contact-phone" class="block text-gray-700 text-sm font-bold mb-2">聯絡電話:</label>
+                    <input type="tel" id="order-contact-phone" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：0912345678">
+                </div>
+                <div>
+                    <label for="order-email" class="block text-gray-700 text-sm font-bold mb-2">電子郵件:</label>
+                    <input type="email" id="order-email" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：guest@example.com">
+                </div>
+                <div>
+                    <label for="order-assigned-room" class="block text-gray-700 text-sm font-bold mb-2">預計分配房間號:</label>
+                    <input type="text" id="order-assigned-room" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：101">
+                </div>
+                <div>
+                    <label for="order-room-type" class="block text-gray-700 text-sm font-bold mb-2">房型:</label>
+                    <select id="order-room-type" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" required>
+                        <option value="">請選擇房型</option>
+                        <!-- 實際應用中，這些選項會從後端動態載入 -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="order-checkin-date" class="block text-gray-700 text-sm font-bold mb-2">入住日期:</label>
+                        <input type="date" id="order-checkin-date" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" required>
+                    </div>
+                    <div>
+                        <label for="order-checkout-date" class="block text-gray-700 text-sm font-bold mb-2">退房日期:</label>
+                        <input type="date" id="order-checkout-date" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="order-guests" class="block text-gray-700 text-sm font-bold mb-2">入住人數:</label>
+                    <input type="number" id="order-guests" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：2" min="1" required>
+                </div>
+                <div>
+                    <label for="order-total-amount" class="block text-gray-700 text-sm font-bold mb-2">總金額:</label>
+                    <input type="number" id="order-total-amount" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：7000" min="0" required>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-add-order" class="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">取消</button>
+                    <button type="submit" class="bg-custom-blue text-white px-6 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">儲存訂單</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 訂單操作 Modal -->
+    <div id="order-action-modal" class="modal fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-card-light rounded-lg shadow-xl p-8 w-11/12 md:w-1/2 lg:w-1/3 max-w-sm relative">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">訂單操作</h3>
+            <div id="order-details-display" class="space-y-2 text-gray-700 mb-6">
+                <!-- Order details will be dynamically loaded here -->
+            </div>
+            <div class="flex flex-col space-y-3">
+                <button id="edit-order-btn" class="bg-custom-blue text-white px-4 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">
+                    <i class="fas fa-edit mr-2"></i> 編輯訂單
+                </button>
+                <button id="change-room-btn" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                    <i class="fas fa-exchange-alt mr-2"></i> 換房
+                </button>
+                <button id="close-order-action-modal" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 特殊日期區間價格設定 Modal -->
+    <div id="special-date-price-modal" class="modal fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-card-light rounded-lg shadow-xl p-8 w-11/12 md:w-2/3 lg:w-1/2 max-w-md relative">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6" id="special-date-price-modal-title">設定特殊日期區間價格</h3>
+            <p id="special-date-range-display" class="text-gray-700 mb-4 font-semibold"></p>
+            <div id="special-date-room-prices" class="space-y-4">
+                <!-- Dynamic price inputs for each selected room type will go here -->
+            </div>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button type="button" id="cancel-special-date-price" class="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">取消</button>
+                <button type="button" id="save-special-date-price" class="bg-custom-blue text-white px-6 py-2 rounded-md hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">確認新增</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Utility Functions ---
+        const getFormattedDate = (date) => date.toISOString().split('T')[0];
+        const parseDate = (dateString) => new Date(dateString);
+
+        // ==== Custom Message Box (replacing alert/confirm) ====
+        function showCustomMessage(message, type = 'info', duration = 3000) {
+            const messageBox = document.createElement('div');
+            messageBox.className = `fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-lg text-white font-bold z-[100] transition-all duration-300 transform scale-0 opacity-0`;
+
+            let bgColor = '#333';
+            switch (type) {
+                case 'success':
+                    bgColor = '#28A745'; // Green
+                    break;
+                case 'error':
+                    bgColor = '#DC3545'; // Red
+                    break;
+                case 'warning':
+                    bgColor = '#FFC107'; // Yellow
+                    messageBox.style.color = '#333'; // Dark text for yellow background
+                    break;
+                case 'info':
+                default:
+                    bgColor = '#007BFF'; // Blue
+                    break;
+            }
+            messageBox.style.backgroundColor = bgColor;
+            messageBox.textContent = message;
+            document.body.appendChild(messageBox);
+
+            // Animate in
+            setTimeout(() => {
+                messageBox.style.transform = 'translateX(-50%) scale(1)';
+                messageBox.style.opacity = '1';
+            }, 50);
+
+            // Animate out and remove
+            setTimeout(() => {
+                messageBox.style.transform = 'translateX(-50%) scale(0.9)';
+                messageBox.style.opacity = '0';
+                messageBox.addEventListener('transitionend', () => messageBox.remove());
+            }, duration);
+        }
+
+        // --- Global Data Stores (Simulated Backend) ---
+        // Sample Room Types data (新增加，儲存房型定義)
+        let sampleRoomTypes = [
+            { name: '豪華雙人房', imageUrl: 'https://placehold.co/400x200/007BFF/ffffff?text=豪華雙人房', capacity: 2, price: 3500, description: '寬敞舒適，景觀極佳。' },
+            { name: '標準單人房', imageUrl: 'https://placehold.co/400x200/007BFF/ffffff?text=標準單人房', capacity: 1, price: 1200, description: '簡潔實用，適合單人商務客。' },
+            { name: '行政套房', imageUrl: 'https://placehold.co/400x200/007BFF/ffffff?text=行政套房', capacity: 3, price: 5000, description: '奢華體驗，配備齊全。' },
+        ];
+
+        // Sample physical rooms data (保留，儲存實體房間資訊)
+        let sampleRooms = [
+            { roomNumber: '101', roomType: '豪華雙人房' },
+            { roomNumber: '102', roomType: '豪華雙人房' },
+            { roomNumber: '103', roomType: '豪華雙人房' },
+            { roomNumber: '201', roomType: '標準單人房' },
+            { roomNumber: '202', roomType: '標準單人房' },
+            { roomNumber: '203', roomType: '標準單人房' },
+            { roomNumber: '301', roomType: '行政套房' },
+            { roomNumber: '302', roomType: '行政套房' },
+            { roomNumber: '303', roomType: '行政套房' },
+            { roomNumber: '401', roomType: '標準單人房' },
+        ].sort((a, b) => a.roomNumber.localeCompare(b.roomNumber)); // Sort by room number
+
+        // Sample order data (status property added to existing bookings)
+        const sampleBookings = [
+            { id: 'ORD001', roomType: '豪華雙人房', assignedRoom: '101', checkin: '2024-08-15', checkout: '2024-08-18', guestName: '王小明', totalAmount: '3500', contactPhone: '0912345678', email: 'wang@example.com', guests: 2, status: '已確認' },
+            { id: 'ORD002', roomType: '標準單人房', assignedRoom: '201', checkin: '2024-08-16', checkout: '2024-08-17', guestName: '林大華', totalAmount: '1200', contactPhone: '0987654321', email: 'lin@example.com', guests: 1, status: '待付款' },
+            { id: 'ORD003', roomType: '豪華雙人房', assignedRoom: '102', checkin: '2024-08-17', checkout: '2024-08-19', guestName: '陳小芳', totalAmount: '3500', contactPhone: '0911223344', email: 'chen@example.com', guests: 2, status: '已入住' },
+            { id: 'ORD004', roomType: '行政套房', assignedRoom: '301', checkin: '2024-08-20', checkout: '2024-08-23', guestName: '李大偉', totalAmount: '5800', contactPhone: '0955667788', email: 'li@example.com', guests: 3, status: '已確認' },
+            { id: 'ORD005', roomType: '標準單人房', assignedRoom: '202', checkin: '2024-08-22', checkout: '2024-08-24', guestName: '趙美玲', totalAmount: '1200', contactPhone: '0933445566', email: 'chao@example.com', guests: 1, status: '待付款' },
+            { id: 'ORD006', roomType: '豪華雙人房', assignedRoom: '103', checkin: '2024-08-01', checkout: '2024-08-05', guestName: '張大飛', totalAmount: '5000', contactPhone: '0977889900', email: 'chang@example.com', guests: 2, status: '已入住' },
+            { id: 'ORD007', roomType: '豪華雙人房', assignedRoom: '103', checkin: '2024-08-05', checkout: '2024-08-08', guestName: '陳小娟', totalAmount: '3000', contactPhone: '0922113344', email: 'chenj@example.com', guests: 2, status: '已確認' },
+            { id: 'ORD008', roomType: '標準單人房', assignedRoom: '203', checkin: '2024-08-28', checkout: '2024-09-02', guestName: '吳阿華', totalAmount: '2500', contactPhone: '0966778899', email: 'wu@example.com', guests: 1, status: '待付款' },
+        ];
+
+        // Sample Projects Data Structure
+        let sampleProjects = [
+             {
+                id: 'PROJ001',
+                name: '暑期特惠專案',
+                depositPercentage: 30, // 新增的訂金百分比
+                applicableRoomTypes: ['豪華雙人房', '標準單人房'],
+                weekdayDays: [1, 2, 3, 4], // Mon-Thu
+                weekendDays: [0, 5, 6],    // Fri, Sat, Sun
+                roomTypePrices: { // Base prices for room types within this project
+                    '豪華雙人房': { weekday: 3000, weekend: 4000 },
+                    '標準單人房': { weekday: 1000, weekend: 1500 }
+                },
+                specialDateRanges: [
+                    {
+                        id: 'SDR001',
+                        startDate: '2024-08-10',
+                        endDate: '2024-08-12',
+                        roomTypePrices: { // Overrides for this range
+                            '豪華雙人房': 4500,
+                            '標準單人房': 1800
+                        }
+                    },
+                     {
+                        id: 'SDR002',
+                        startDate: '2024-09-01',
+                        endDate: '2024-09-03',
+                        roomTypePrices: {
+                            '豪華雙人房': 3800,
+                            '標準單人房': 1300
+                        }
+                    }
+                ]
+            }
+        ];
+
+
+        // Day names for display
+        const dayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+
+        // Add a global variable to store the original room type name when editing
+        let roomTypeNameCurrentlyEditing = null;
+
+        // --- Functions ---
+        function showContent(contentId) {
+            console.log(`[DEBUG] 切換內容至: ${contentId}`);
+            const contentSections = document.querySelectorAll('.content-section');
+            contentSections.forEach(section => { section.classList.add('hidden'); });
+            const targetContent = document.getElementById(`content-${contentId}`);
+            if (targetContent) { targetContent.classList.remove('hidden'); } else {
+                console.error(`[ERROR] 找不到內容區塊: content-${contentId}`);
+            }
+
+            const navLinks = document.querySelectorAll('#sidebar a');
+            navLinks.forEach(link => {
+                link.classList.remove('active-nav-link');
+                link.classList.add('hover:bg-blue-100');
+            });
+            const activeLink = document.getElementById(`nav-${contentId}`);
+            if (activeLink) {
+                activeLink.classList.add('active-nav-link');
+                activeLink.classList.remove('hover:bg-blue-100');
+            } else {
+                console.warn(`[WARN] 找不到導航連結: nav-${contentId}`);
+            }
+
+            // Re-render relevant content when switching sections
+            if (contentId === 'room-assignment') {
+                populateRoomTypeFilter();
+                renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value);
+            } else if (contentId === 'room-projects') { // Now 'project-settings'
+                populateProjectRoomTypeCheckboxes();
+                renderExistingProjects();
+                // Clear the form when navigating to it for a new project
+                projectSettingsForm.reset();
+                dynamicRoomTypePricingDiv.classList.add('hidden'); // Hide dynamic pricing
+                dynamicRoomTypePricingDiv.innerHTML = '';
+                specialDateRangesList.innerHTML = '';
+                // Also reset weekday/weekend checkboxes
+                document.querySelectorAll('input[name="weekday-days"]').forEach(cb => cb.checked = false);
+                document.querySelectorAll('input[name="weekend-days"]').forEach(cb => cb.checked = false);
+            } else if (contentId === 'room-types') { // 房型管理
+                renderRoomTypes();
+            }
+        }
+
+        function renderDashboardOrders() {
+            console.log('[DEBUG] 渲染儀表板訂單...');
+            const dashboardOrderCardsMobile = document.getElementById('dashboard-order-cards-mobile');
+            const dashboardOrderTableDesktop = document.getElementById('dashboard-order-table-desktop');
+
+            if (!dashboardOrderCardsMobile || !dashboardOrderTableDesktop) {
+                console.error('[ERROR] 儀表板訂單容器缺失!');
+                showCustomMessage('儀表板載入失敗，缺少必要的元素。', 'error');
+                return;
+            }
+
+            dashboardOrderCardsMobile.innerHTML = '';
+            dashboardOrderTableDesktop.innerHTML = '';
+
+            try {
+                sampleBookings.forEach(order => {
+                    // Safely access order.status, default to 'pending' if undefined/null
+                    const statusValue = order.status ? order.status.toLowerCase() : 'pending';
+                    const statusClass = `status-${statusValue.replace('待付款', 'pending').replace('已確認', 'confirmed').replace('已入住', 'checkedin').replace('已取消', 'cancelled')}`;
+                    const displayStatus = order.status || '待付款'; // For display, default to '待付款'
+
+                    const orderCardHtml = `
+                        <div class="bg-gray-100 rounded-lg shadow-sm p-4 border border-light-blue">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-semibold text-gray-800">${order.id}</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass}">${displayStatus}</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-1">房客: ${order.guestName}</div>
+                            <div class="text-sm text-gray-600 mb-1">房型: ${order.roomType}</div>
+                            <div class="text-sm text-gray-600 mb-1">入住: ${order.checkin}</div>
+                            <div class="text-sm text-gray-600">退房: ${order.checkout}</div>
+                            <button onclick="openOrderActionModal(${JSON.stringify(order).replace(/"/g, '&quot;')})" class="mt-3 bg-custom-blue text-white px-3 py-1 text-sm rounded-md w-full hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">查看詳情</button>
+                        </div>
+                    `;
+                    dashboardOrderCardsMobile.insertAdjacentHTML('beforeend', orderCardHtml);
+
+                    const orderTableRowHtml = `
+                        <tr class="table-row-hover">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                                ${order.id}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                ${order.guestName}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                ${order.roomType}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                ${order.checkin}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                ${order.checkout}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-custom-blue font-bold">
+                                $${order.totalAmount}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                                    ${displayStatus}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="openOrderActionModal(${JSON.stringify(order).replace(/"/g, '&quot;')})" class="text-custom-blue hover:text-custom-blue-dark mr-4">詳情/編輯</button>
+                                <button onclick="showCustomMessage('取消訂單功能待實現', 'info')" class="text-gray-600 hover:text-gray-800">取消</button>
+                            </td>
+                        </tr>
+                    `;
+                    dashboardOrderTableDesktop.insertAdjacentHTML('beforeend', orderTableRowHtml);
+                });
+            } catch (e) {
+                console.error('[ERROR] 渲染儀表板訂單時發生錯誤:', e);
+                showCustomMessage('載入儀表板訂單時發生錯誤。請檢查主控台。', 'error', 5000);
+            }
+        }
+
+        // renderRoomTypes - 根據 sampleRoomTypes 渲染房型管理頁面
+        function renderRoomTypes() {
+            console.log('[DEBUG] 渲染房型管理頁面...');
+            const roomCardsMobile = document.getElementById('room-cards-mobile');
+            const roomTableDesktop = document.getElementById('room-table-desktop');
+
+            if (!roomCardsMobile || !roomTableDesktop) {
+                console.error('[ERROR] 房型管理容器缺失!');
+                showCustomMessage('房型管理頁面載入失敗，缺少必要的元素。', 'error');
+                return;
+            }
+
+            roomCardsMobile.innerHTML = '';
+            roomTableDesktop.innerHTML = '';
+
+            if (sampleRoomTypes.length === 0) {
+                roomCardsMobile.innerHTML = '<p class="text-gray-600">目前沒有設定任何房型。</p>';
+                roomTableDesktop.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-600">目前沒有設定任何房型。</td></tr>';
+                console.log('[DEBUG] 無房型可顯示。');
+                return;
+            }
+
+            try {
+                sampleRoomTypes.forEach(roomType => {
+                    const roomCardHtml = `
+                        <div class="room-item bg-gray-100 rounded-lg shadow-sm p-4 border border-light-blue">
+                            <div class="mb-2">
+                                <img src="${roomType.imageUrl || 'https://placehold.co/400x200/007BFF/ffffff?text=圖片缺失'}" alt="${roomType.name}" class="rounded-md mb-2 w-full h-32 object-cover border border-light-blue">
+                                <span class="font-semibold text-gray-800 text-lg room-name">${roomType.name}</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-1">容納人數: <span class="room-capacity">${roomType.capacity}</span></div>
+                            <div class="text-sm text-gray-600 mb-1">價格: <span class="font-bold text-custom-blue room-price">$${roomType.price} / 晚</span></div>
+                            <div class="text-sm text-gray-600 mb-2 room-description">描述: ${roomType.description}</div>
+                            <div class="flex space-x-2 mt-3">
+                                <button onclick="openAddRoomModal(${JSON.stringify(roomType).replace(/"/g, '&quot;')})" class="bg-custom-blue text-white px-3 py-1 text-sm rounded-md flex-1 hover:bg-custom-blue-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-glow">編輯</button>
+                                <button onclick="deleteRoomType('${roomType.name}')" class="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded-md flex-1 hover:bg-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">刪除</button>
+                            </div>
+                        </div>
+                    `;
+                    roomCardsMobile.insertAdjacentHTML('beforeend', roomCardHtml);
+
+                    const roomTableRowHtml = `
+                        <tr class="room-item table-row-hover">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 room-name">
+                                ${roomType.name}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                <img src="${roomType.imageUrl || 'https://placehold.co/100x50/007BFF/ffffff?text=圖片缺失'}" alt="${roomType.name}圖片" class="rounded-md w-24 h-auto border border-light-blue room-image">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 room-capacity">
+                                ${roomType.capacity}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-custom-blue font-bold room-price">
+                                $${roomType.price}
+                            </td>
+                            <td class="px-6 py-4 max-w-xs overflow-hidden text-ellipsis text-sm text-gray-700 room-description">
+                                ${roomType.description}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="openAddRoomModal(${JSON.stringify(roomType).replace(/"/g, '&quot;')})" class="text-custom-blue hover:text-custom-blue-dark mr-4">編輯</button>
+                                <button onclick="deleteRoomType('${roomType.name}')" class="text-gray-600 hover:text-gray-800">刪除</button>
+                            </td>
+                        </tr>
+                    `;
+                    roomTableDesktop.insertAdjacentHTML('beforeend', roomTableRowHtml);
+                });
+            } catch (e) {
+                console.error('[ERROR] 渲染房型管理頁面時發生錯誤:', e);
+                showCustomMessage('載入房型管理頁面時發生錯誤。請檢查主控台。', 'error', 5000);
+            }
+        }
+
+        // deleteRoomType - 刪除房型定義及相關實體房間
+        function deleteRoomType(roomTypeName) {
+            if (confirm(`確定要刪除房型 "${roomTypeName}" 嗎？此操作將同時移除所有屬於此房型的實體房間，以及任何相關聯的專案設定！`)) {
+                // 移除房型定義
+                sampleRoomTypes = sampleRoomTypes.filter(type => type.name !== roomTypeName);
+                // 移除所有屬於此房型的實體房間
+                sampleRooms = sampleRooms.filter(room => room.roomType !== roomTypeName);
+                // 移除專案中包含此房型的設定
+                sampleProjects.forEach(project => {
+                    project.applicableRoomTypes = project.applicableRoomTypes.filter(rt => rt !== roomTypeName);
+                    if (project.roomTypePrices) {
+                        delete project.roomTypePrices[roomTypeName];
+                    }
+                    project.specialDateRanges.forEach(sdr => {
+                        if (sdr.roomTypePrices) {
+                            delete sdr.roomTypePrices[roomTypeName];
+                        }
+                    });
+                });
+
+                showCustomMessage(`房型 "${roomTypeName}" 及其所有實體房間已刪除！`, 'success');
+                renderRoomTypes(); // 重新渲染房型管理頁面
+                populateOrderRoomTypes(); // 更新訂單模態框的房型下拉選單
+                populateProjectRoomTypeCheckboxes(); // 更新專案設定的房型選擇
+                renderExistingProjects(); // 更新現有專案列表
+                renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value); // 更新排房日曆
+            }
+        }
+
+
+        function populateOrderRoomTypes() {
+            console.log('[DEBUG] 載入訂單房型下拉選單...');
+            const orderRoomTypeSelect = document.getElementById('order-room-type');
+            if (!orderRoomTypeSelect) {
+                console.error('[ERROR] 訂單房型下拉選單元素缺失!');
+                return;
+            }
+            orderRoomTypeSelect.innerHTML = '<option value="">請選擇房型</option>';
+            // 從 sampleRoomTypes 獲取房型名稱
+            sampleRoomTypes.forEach(roomType => {
+                const option = document.createElement('option');
+                option.value = roomType.name;
+                option.textContent = roomType.name;
+                orderRoomTypeSelect.appendChild(option);
+            });
+        }
+
+        function openAddOrderModal(prefillDate = null, prefillRoomNumber = null, prefillRoomType = null, orderToEdit = null) {
+            console.log('[DEBUG] 開啟新增/編輯訂單彈出視窗...');
+            const addOrderModal = document.getElementById('add-order-modal');
+            const addOrderForm = document.getElementById('add-order-form');
+            const addOrderModalTitle = document.getElementById('add-order-modal-title');
+            const orderEditIdInput = document.getElementById('order-edit-id');
+            const orderGuestNameInput = document.getElementById('order-guest-name');
+            const orderContactPhoneInput = document.getElementById('order-contact-phone');
+            const orderEmailInput = document.getElementById('order-email');
+            const orderAssignedRoomInput = document.getElementById('order-assigned-room');
+            const orderRoomTypeSelect = document.getElementById('order-room-type');
+            const orderCheckinDateInput = document.getElementById('order-checkin-date');
+            const orderCheckoutDateInput = document.getElementById('order-checkout-date');
+            const orderGuestsInput = document.getElementById('order-guests');
+            const orderTotalAmountInput = document.getElementById('order-total-amount');
+
+            if (!addOrderModal || !addOrderForm) {
+                console.error('[ERROR] 新增/編輯訂單彈出視窗元素缺失!');
+                showCustomMessage('無法開啟訂單視窗，缺少必要的元素。', 'error');
+                return;
+            }
+
+            addOrderModal.classList.remove('hidden');
+            addOrderForm.reset();
+            orderEditIdInput.value = '';
+
+            // Reset readOnly/disabled states and classes for inputs/selects
+            orderAssignedRoomInput.readOnly = false;
+            orderAssignedRoomInput.classList.remove('bg-gray-800', 'cursor-not-allowed');
+            orderRoomTypeSelect.disabled = false;
+            orderRoomTypeSelect.classList.remove('bg-gray-800', 'cursor-not-allowed');
+
+
+            if (orderToEdit) {
+                addOrderModalTitle.textContent = '編輯訂單';
+                orderEditIdInput.value = orderToEdit.id;
+                orderGuestNameInput.value = orderToEdit.guestName;
+                orderContactPhoneInput.value = orderToEdit.contactPhone || '';
+                orderEmailInput.value = orderToEdit.email || '';
+                orderAssignedRoomInput.value = orderToEdit.assignedRoom || '';
+                // Ensure the room type option exists before setting value
+                if (!Array.from(orderRoomTypeSelect.options).some(option => option.value === orderToEdit.roomType)) {
+                    const newOption = document.createElement('option');
+                    newOption.value = orderToEdit.roomType;
+                    newOption.textContent = orderToEdit.roomType;
+                    orderRoomTypeSelect.appendChild(newOption);
+                }
+                orderRoomTypeSelect.value = orderToEdit.roomType;
+                orderCheckinDateInput.value = orderToEdit.checkin;
+                orderCheckoutDateInput.value = orderToEdit.checkout;
+                orderGuestsInput.value = orderToEdit.guests;
+                orderTotalAmountInput.value = orderToEdit.totalAmount;
+
+                // Lock assigned room and room type when editing an existing booking
+                orderAssignedRoomInput.readOnly = true;
+                orderAssignedRoomInput.classList.add('bg-gray-800', 'cursor-not-allowed');
+                orderRoomTypeSelect.disabled = true;
+                orderRoomTypeSelect.classList.add('bg-gray-800', 'cursor-not-allowed');
+
+            } else {
+                addOrderModalTitle.textContent = '新增訂單';
+                if (prefillDate) { orderCheckinDateInput.value = prefillDate; } else { orderCheckinDateInput.value = ''; }
+                if (orderAssignedRoomInput) {
+                    orderAssignedRoomInput.value = prefillRoomNumber || '';
+                    if (prefillRoomNumber) {
+                        orderAssignedRoomInput.readOnly = true;
+                        orderAssignedRoomInput.classList.add('bg-gray-800', 'cursor-not-allowed');
+                    }
+                }
+                if (orderRoomTypeSelect) {
+                    if (prefillRoomType) {
+                        if (!Array.from(orderRoomTypeSelect.options).some(option => option.value === prefillRoomType)) {
+                            const newOption = document.createElement('option');
+                            newOption.value = prefillRoomType;
+                            newOption.textContent = prefillRoomType;
+                            orderRoomTypeSelect.appendChild(newOption);
+                        }
+                        orderRoomTypeSelect.value = prefillRoomType;
+                        orderRoomTypeSelect.disabled = true;
+                        orderRoomTypeSelect.classList.add('bg-gray-800', 'cursor-not-allowed');
+                    } else {
+                        orderRoomTypeSelect.value = "";
+                    }
+                }
+            }
+        }
+
+        // populateProjectRoomTypeCheckboxes - 從 sampleRoomTypes 獲取房型
+        function populateProjectRoomTypeCheckboxes() {
+            console.log('[DEBUG] 載入專案設定的房型勾選框...');
+            const projectRoomTypesCheckboxesContainer = document.getElementById('project-room-types-checkboxes');
+            if (!projectRoomTypesCheckboxesContainer) {
+                console.error('[ERROR] 專案房型勾選框容器缺失!');
+                showCustomMessage('專案設定載入失敗，房型選擇元素缺失。', 'error');
+                return;
+            }
+            projectRoomTypesCheckboxesContainer.innerHTML = '';
+            // 從 sampleRoomTypes 獲取房型名稱
+            sampleRoomTypes.forEach(roomType => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center';
+                div.innerHTML = `
+                    <input type="checkbox" id="project-room-type-${roomType.name.replace(/\s/g, '_')}" name="project-applicable-room-types" value="${roomType.name}" class="h-4 w-4 text-custom-blue border-gray-300 rounded focus:ring-custom-blue">
+                    <label for="project-room-type-${roomType.name.replace(/\s/g, '_')}" class="ml-2 text-gray-700">${roomType.name}</label>
+                `;
+                projectRoomTypesCheckboxesContainer.appendChild(div);
+            });
+
+            // Add event listeners to dynamically update pricing inputs
+            document.querySelectorAll('input[name="project-applicable-room-types"]').forEach(checkbox => {
+                checkbox.addEventListener('change', updateDynamicRoomTypePricingInputs);
+            });
+        }
+
+        function updateDynamicRoomTypePricingInputs() {
+            console.log('[DEBUG] 更新動態房型價格輸入框...');
+            const dynamicRoomTypePricingDiv = document.getElementById('dynamic-room-type-pricing');
+            if (!dynamicRoomTypePricingDiv) {
+                console.error('[ERROR] 動態房型價格區塊缺失!');
+                return;
+            }
+            const selectedRoomTypes = Array.from(document.querySelectorAll('input[name="project-applicable-room-types"]:checked')).map(cb => cb.value);
+            dynamicRoomTypePricingDiv.innerHTML = '';
+
+            if (selectedRoomTypes.length > 0) {
+                dynamicRoomTypePricingDiv.classList.remove('hidden');
+                dynamicRoomTypePricingDiv.innerHTML += '<h4 class="text-lg font-bold text-gray-800 mb-4">各房型價格設定 (專案內基礎價格)</h4>';
+                selectedRoomTypes.forEach(roomType => {
+                    // Find the default price from sampleRoomTypes for placeholder
+                    const defaultRoomType = sampleRoomTypes.find(rt => rt.name === roomType);
+                    const defaultPrice = defaultRoomType ? defaultRoomType.price : 0;
+
+                    const roomTypePricingHtml = `
+                        <div class="border-t border-gray-200 pt-4 mt-4 first:border-t-0 first:pt-0 first:mt-0">
+                            <h5 class="font-semibold text-gray-700 mb-2">${roomType}</h5>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="base-weekday-price-${roomType.replace(/\s/g, '_')}" class="block text-gray-700 text-sm font-bold mb-2">平日價格:</label>
+                                    <input type="number" id="base-weekday-price-${roomType.replace(/\s/g, '_')}" data-room-type="${roomType}" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：${Math.floor(defaultPrice * 0.8)}" min="0" required>
+                                </div>
+                                <div>
+                                    <label for="base-weekend-price-${roomType.replace(/\s/g, '_')}" class="block text-gray-700 text-sm font-bold mb-2">假日價格:</label>
+                                    <input type="number" id="base-weekend-price-${roomType.replace(/\s/g, '_')}" data-room-type="${roomType}" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：${defaultPrice}" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    dynamicRoomTypePricingDiv.innerHTML += roomTypePricingHtml;
+                });
+            } else {
+                dynamicRoomTypePricingDiv.classList.add('hidden');
+                console.log('[DEBUG] 未選擇適用房型，隱藏動態價格輸入。');
+            }
+        }
+
+        function addSpecialDateRangeToListDisplay(rangeData) {
+            console.log('[DEBUG] 新增特殊日期區間到列表顯示:', rangeData);
+            const specialDateRangesList = document.getElementById('special-date-ranges-list');
+            const projectSettingsForm = document.getElementById('project-settings-form');
+
+            if (!specialDateRangesList || !projectSettingsForm) {
+                console.error('[ERROR] 特殊日期區間列表或專案設定表單缺失!');
+                showCustomMessage('無法新增特殊日期區間，缺少必要的元素。', 'error');
+                return;
+            }
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'bg-gray-50 p-3 rounded-md border border-gray-200';
+            let pricesHtml = Object.entries(rangeData.roomTypePrices)
+                                 .map(([roomType, price]) => `<span class="block text-xs text-gray-600">${roomType}: $${price}</span>`)
+                                 .join('');
+
+            itemDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-gray-800">${rangeData.startDate} ~ ${rangeData.endDate}</span>
+                    <button type="button" class="text-red-600 hover:text-red-800 delete-special-range" data-id="${rangeData.id}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                ${pricesHtml}
+            `;
+            specialDateRangesList.appendChild(itemDiv);
+
+            // Store in a temporary array for the current project submission
+            if (!projectSettingsForm._tempSpecialRanges) {
+                projectSettingsForm._tempSpecialRanges = [];
+            }
+            projectSettingsForm._tempSpecialRanges.push(rangeData);
+
+            // Add event listener for delete
+            itemDiv.querySelector('.delete-special-range').addEventListener('click', (event) => {
+                const idToDelete = event.currentTarget.dataset.id;
+                projectSettingsForm._tempSpecialRanges = projectSettingsForm._tempSpecialRanges.filter(item => item.id !== idToDelete);
+                itemDiv.remove();
+                showCustomMessage('特殊日期區間已移除！', 'info', 1500);
+            });
+        }
+
+        function renderExistingProjects() {
+            console.log('[DEBUG] renderExistingProjects: 正在渲染現有專案...');
+            console.log('[DEBUG] 目前的專案資料:', sampleProjects);
+
+            const existingProjectsList = document.getElementById('existing-projects-list');
+            if (!existingProjectsList) {
+                console.error('[ERROR] 現有專案列表容器缺失!');
+                showCustomMessage('專案列表載入失敗，缺少必要的元素。', 'error');
+                return;
+            }
+            existingProjectsList.innerHTML = ''; // 清空現有內容
+
+            try {
+                if (sampleProjects.length === 0) {
+                    existingProjectsList.innerHTML = '<p class="text-gray-600">目前沒有設定任何專案。</p>';
+                    console.log('[DEBUG] 沒有專案可顯示。');
+                    return;
+                }
+
+                sampleProjects.forEach(project => {
+                    const projectDiv = document.createElement('div');
+                    projectDiv.className = 'bg-gray-100 rounded-lg shadow-sm p-4 border border-light-blue';
+
+                    let roomTypePricesHtml = Object.entries(project.roomTypePrices)
+                        .map(([roomType, prices]) => `<span class="block text-xs text-gray-600">${roomType}: 平日 $${prices.weekday}, 假日 $${prices.weekend}</span>`)
+                        .join('');
+                    if (roomTypePricesHtml) roomTypePricesHtml = `<div class="mt-2">${roomTypePricesHtml}</div>`;
+
+                    let specialDatesHtml = project.specialDateRanges.map(sdr => {
+                        let sdrPricesHtml = Object.entries(sdr.roomTypePrices)
+                                                .map(([rt, price]) => `<span class="block ml-4 text-xs text-gray-500">${rt}: $${price}</span>`)
+                                                .join('');
+                        return `<div class="mt-1"><span class="font-semibold text-gray-700">${sdr.startDate} ~ ${sdr.endDate}:</span>${sdrPricesHtml}</div>`;
+                    }).join('');
+                    if (specialDatesHtml) specialDatesHtml = `<div class="mt-2 border-t border-gray-200 pt-2">特殊日期價格: ${specialDatesHtml}</div>`;
+
+
+                    projectDiv.innerHTML = `
+                        <h4 class="font-bold text-lg text-gray-800">${project.name}</h4>
+                        <div class="text-sm text-gray-600">訂金百分比: ${project.depositPercentage || 0}%</div>
+                        <div class="text-sm text-gray-600">適用房型: ${project.applicableRoomTypes.join(', ') || '無'}</div>
+                        <div class="text-sm text-gray-600">平日定義: ${project.weekdayDays.map(d => dayNames[d]).join(', ')}</div>
+                        <div class="text-sm text-gray-600">假日定義: ${project.weekendDays.map(d => dayNames[d]).join(', ')}</div>
+                        ${roomTypePricesHtml}
+                        ${specialDatesHtml}
+                        <div class="flex space-x-2 mt-3">
+                            <button onclick="showCustomMessage('編輯專案功能待實現', 'info')" class="bg-gray-200 text-gray-800 px-3 py-1 text-sm rounded-md hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">編輯</button>
+                            <button onclick="deleteProject('${project.id}')" class="bg-red-500 text-white px-3 py-1 text-sm rounded-md hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400">刪除</button>
+                        </div>
+                    `;
+                    existingProjectsList.appendChild(projectDiv);
+                });
+                console.log('[DEBUG] 現有專案渲染完成。');
+            } catch (e) {
+                console.error('[ERROR] 渲染現有專案時發生錯誤:', e);
+                showCustomMessage('載入專案列表時發生錯誤。請檢查主控台。', 'error', 5000);
+            }
+        }
+
+        function deleteProject(id) {
+            console.log(`[DEBUG] 嘗試刪除專案 ID: ${id}`);
+            // Using custom confirm message
+            if (confirm('確定要刪除此專案嗎？')) { // Keeping native confirm for critical actions like delete
+                sampleProjects = sampleProjects.filter(p => p.id !== id);
+                showCustomMessage('專案已刪除！', 'success');
+                renderExistingProjects();
+                console.log(`[DEBUG] 專案 ID: ${id} 已刪除。`);
+            } else {
+                console.log(`[DEBUG] 專案 ID: ${id} 刪除操作已取消。`);
+            }
+        }
+
+
+        function getRoomBookingsForDate(roomNumber, date) {
+            const formattedDate = date.toISOString().split('T')[0];
+            const current = new Date(formattedDate);
+
+            for (const booking of sampleBookings) {
+                if (booking.assignedRoom === roomNumber) {
+                    const checkin = parseDate(booking.checkin);
+                    const checkout = parseDate(booking.checkout);
+                    if (current >= checkin && current < checkout) {
+                        return booking;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function populateRoomTypeFilter() {
+            console.log('[DEBUG] 載入房型篩選器...');
+            const roomTypeFilterSelect = document.getElementById('room-type-filter');
+            if (!roomTypeFilterSelect) {
+                console.error('[ERROR] 房型篩選器元素缺失!');
+                return;
+            }
+            roomTypeFilterSelect.innerHTML = '<option value="all">所有房型</option>';
+            // 從 sampleRoomTypes 獲取房型名稱
+            sampleRoomTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.name;
+                option.textContent = type.name;
+                roomTypeFilterSelect.appendChild(option);
+            });
+        }
+
+        let roomAssignCurrentDate = new Date(); // Moved here for global access
+
+        function renderRoomAssignmentCalendar(year, month, filterRoomType = 'all') {
+            console.log(`[DEBUG] 渲染排房日曆: ${year}年${month + 1}月, 篩選房型: ${filterRoomType}`);
+            const roomAssignmentGridContainer = document.getElementById('room-assignment-grid-container');
+            const roomAssignCurrentMonthYearDisplay = document.getElementById('room-assign-current-month-year');
+
+            if (!roomAssignmentGridContainer || !roomAssignCurrentMonthYearDisplay) {
+                console.error('[ERROR] 排房日曆容器或標題缺失!');
+                showCustomMessage('排房日曆載入失敗，缺少必要的元素。', 'error');
+                return;
+            }
+
+            roomAssignmentGridContainer.innerHTML = ''; // Clear old calendar
+
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            const daysInMonth = lastDayOfMonth.getDate();
+
+            roomAssignCurrentMonthYearDisplay.textContent = `${year}年 ${month + 1}月`;
+
+            // Create header row: top-left empty cell + dates
+            const headerRowEmpty = document.createElement('div');
+            headerRowEmpty.className = 'room-assignment-room-number-header'; // Top-left empty cell
+            roomAssignmentGridContainer.appendChild(headerRowEmpty);
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'room-assignment-date-header';
+                dateHeader.textContent = day;
+                roomAssignmentGridContainer.appendChild(dateHeader);
+            }
+            // Pad empty headers for consistent grid columns (up to 31 days)
+            const maxDaysInMonth = 31;
+            for (let i = daysInMonth; i < maxDaysInMonth; i++) {
+                const emptyHeader = document.createElement('div');
+                emptyHeader.className = 'room-assignment-date-header opacity-0'; // Hidden but takes space
+                emptyHeader.textContent = '';
+                roomAssignmentGridContainer.appendChild(emptyHeader);
+            }
+
+
+            // Filter rooms based on selected room type
+            const roomsToRender = filterRoomType === 'all'
+                ? sampleRooms
+                : sampleRooms.filter(room => room.roomType === filterRoomType);
+            
+            if (roomsToRender.length === 0) {
+                 const noRoomsMessage = document.createElement('div');
+                 noRoomsMessage.className = 'col-span-full text-center py-10 text-gray-600';
+                 noRoomsMessage.textContent = '此篩選條件下沒有房間可顯示。';
+                 roomAssignmentGridContainer.appendChild(noRoomsMessage);
+                 return;
+            }
+
+
+            // Create each row: room number + daily status
+            try {
+                roomsToRender.forEach(room => {
+                    const roomNumberCell = document.createElement('div');
+                    roomNumberCell.className = 'room-assignment-room-number';
+                    roomNumberCell.innerHTML = `<div>${room.roomNumber}</div><div class="text-xs text-gray-600">${room.roomType}</div>`;
+                    roomAssignmentGridContainer.appendChild(roomNumberCell);
+
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const cell = document.createElement('div');
+                        const fullDate = new Date(year, month, day);
+                        const formattedDate = fullDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+                        const bookingOnThisDay = getRoomBookingsForDate(room.roomNumber, fullDate);
+
+                        if (bookingOnThisDay) {
+                            cell.className = 'room-assignment-cell occupied';
+                            cell.innerHTML = `
+                                <div>${bookingOnThisDay.guestName}</div>
+                                <div class="text-xs text-gray-500">${bookingOnThisDay.id}</div>
+                                <div class="text-xs font-bold text-custom-blue">$${bookingOnThisDay.totalAmount}</div>
+                            `;
+                            // Click on booked cell to view order details
+                            cell.addEventListener('click', () => {
+                                openOrderActionModal(bookingOnThisDay);
+                            });
+                        } else {
+                            cell.className = 'room-assignment-cell available';
+                            cell.textContent = '空閒';
+                            // Click on available cell to open Add Order modal and prefill date, room number, and room type
+                            cell.addEventListener('click', () => {
+                                openAddOrderModal(formattedDate, room.roomNumber, room.roomType);
+                            });
+                        }
+                        roomAssignmentGridContainer.appendChild(cell);
+                    }
+
+                    // Pad empty cells for consistent grid columns (up to 31 days)
+                    for (let i = daysInMonth; i < maxDaysInMonth; i++) {
+                        const emptyCell = document.createElement('div');
+                        emptyCell.className = 'room-assignment-cell opacity-0'; // Hidden but takes space
+                        emptyCell.textContent = '';
+                        roomAssignmentGridContainer.appendChild(emptyCell);
+                    }
+                });
+                console.log('[DEBUG] 排房日曆渲染完成。');
+            } catch (e) {
+                console.error('[ERROR] 渲染排房日曆時發生錯誤:', e);
+                showCustomMessage('載入排房日曆時發生錯誤。請檢查主控台。', 'error', 5000);
+            }
+
+
+             // Adjust grid-template-columns to fit current month's days and an extra room number column
+             roomAssignmentGridContainer.style.gridTemplateColumns = `120px repeat(${maxDaysInMonth}, minmax(100px, 1fr))`;
+        }
+
+
+        let currentSelectedOrder = null; // Moved here for global access
+
+        function openOrderActionModal(order) {
+            console.log('[DEBUG] 開啟訂單操作彈出視窗:', order);
+            const orderActionModal = document.getElementById('order-action-modal');
+            const orderDetailsDisplay = document.getElementById('order-details-display');
+            if (!orderActionModal || !orderDetailsDisplay) {
+                console.error('[ERROR] 訂單操作彈出視窗元素缺失!');
+                showCustomMessage('無法開啟訂單操作視窗，缺少必要的元素。', 'error');
+                return;
+            }
+            currentSelectedOrder = order;
+            orderActionModal.classList.remove('hidden');
+
+            orderDetailsDisplay.innerHTML = `
+                <p><span class="font-semibold">訂單號:</span> ${order.id}</p>
+                <p><span class="font-semibold">房客姓名:</span> ${order.guestName}</p>
+                <p><span class="font-semibold">房型:</span> ${order.roomType}</p>
+                <p><span class="font-semibold">房間號:</span> ${order.assignedRoom || '未分配'}</p>
+                <p><span class="font-semibold">入住日期:</span> ${order.checkin}</p>
+                <p><span class="font-semibold">退房日期:</span> ${order.checkout}</p>
+                <p><span class="font-semibold">總金額:</span> $${order.totalAmount}</p>
+            `;
+        }
+
+        // Modified openAddRoomModal to handle both add and edit
+        function openAddRoomModal(roomTypeToEdit = null) {
+            console.log('[DEBUG] 開啟新增/編輯房型彈出視窗。編輯模式:', !!roomTypeToEdit);
+            const addRoomModal = document.getElementById('add-room-modal');
+            const addRoomForm = document.getElementById('add-room-form');
+            const modalTitle = addRoomModal.querySelector('h3');
+            const roomNameInput = document.getElementById('room-name');
+            const roomImageUrlInput = document.getElementById('room-image-url');
+            const roomCapacityInput = document.getElementById('room-capacity');
+            const roomPriceInput = document.getElementById('room-price');
+            const roomDescriptionInput = document.getElementById('room-description');
+            
+            const roomCountSection = document.getElementById('room-count-section'); // 新增的引用
+            const roomCountInput = document.getElementById('room-count');
+            const startingRoomNumberInput = document.getElementById('starting-room-number');
+
+            if (!addRoomModal || !addRoomForm || !modalTitle || !roomNameInput || !roomCountSection || !roomCountInput || !startingRoomNumberInput) {
+                console.error('[ERROR] 新增/編輯房型彈出視窗必要元素缺失!');
+                showCustomMessage('無法開啟房型視窗，缺少必要的元素。', 'error');
+                return;
+            }
+
+            addRoomModal.classList.remove('hidden');
+            addRoomForm.reset(); // Clear form fields
+
+            // Reset visibility/readOnly for room count and starting room number section
+            roomCountSection.classList.remove('hidden'); // Ensure it's visible by default for add mode
+            roomCountInput.required = true;
+            startingRoomNumberInput.required = true;
+            startingRoomNumberInput.readOnly = false;
+            startingRoomNumberInput.classList.remove('bg-gray-800', 'cursor-not-allowed');
+
+            if (roomTypeToEdit) {
+                // Edit mode
+                modalTitle.textContent = '編輯房型';
+                roomTypeNameCurrentlyEditing = roomTypeToEdit.name; // Store original name
+                roomNameInput.value = roomTypeToEdit.name;
+                roomImageUrlInput.value = roomTypeToEdit.imageUrl || '';
+                roomCapacityInput.value = roomTypeToEdit.capacity;
+                roomPriceInput.value = roomTypeToEdit.price;
+                roomDescriptionInput.value = roomTypeToEdit.description;
+
+                // Hide and disable room count and starting room number in edit mode
+                roomCountSection.classList.add('hidden');
+                roomCountInput.required = false;
+                startingRoomNumberInput.required = false;
+
+            } else {
+                // Add mode
+                modalTitle.textContent = '新增房型';
+                roomTypeNameCurrentlyEditing = null; // Clear editing state
+                roomCountInput.value = 1; // Default for new room type
+            }
+        }
+
+
+        // --- Event Listeners Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[DEBUG] DOMContentLoaded 事件觸發，初始化應用程式...');
+
+            // --- UI Element References (All moved inside DOMContentLoaded) ---
+            // General
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const navLinks = document.querySelectorAll('#sidebar a');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            // Modals
+            const addRoomModal = document.getElementById('add-room-modal');
+            const cancelAddRoomBtn = document.getElementById('cancel-add-room');
+            const addRoomForm = document.getElementById('add-room-form');
+            const addRoomBtn = document.getElementById('add-room-btn');
+
+            // New room type inputs (moved here for scope)
+            const roomCountInput = document.getElementById('room-count');
+            const startingRoomNumberInput = document.getElementById('starting-room-number');
+
+
+            const addOrderModal = document.getElementById('add-order-modal');
+            const addOrderModalTitle = document.getElementById('add-order-modal-title');
+            const cancelAddOrderBtn = document.getElementById('cancel-add-order');
+            const addOrderForm = document.getElementById('add-order-form');
+            const orderEditIdInput = document.getElementById('order-edit-id');
+            const orderGuestNameInput = document.getElementById('order-guest-name');
+            const orderContactPhoneInput = document.getElementById('order-contact-phone');
+            const orderEmailInput = document.getElementById('order-email');
+            const orderAssignedRoomInput = document.getElementById('order-assigned-room');
+            const orderRoomTypeSelect = document.getElementById('order-room-type');
+            const orderCheckinDateInput = document.getElementById('order-checkin-date');
+            const orderCheckoutDateInput = document.getElementById('order-checkout-date');
+            const orderGuestsInput = document.getElementById('order-guests');
+            const orderTotalAmountInput = document.getElementById('order-total-amount');
+
+            const orderActionModal = document.getElementById('order-action-modal');
+            const orderDetailsDisplay = document.getElementById('order-details-display');
+            const editOrderBtn = document.getElementById('edit-order-btn');
+            const changeRoomBtn = document.getElementById('change-room-btn');
+            const closeOrderActionModalBtn = document.getElementById('close-order-action-modal');
+            // currentSelectedOrder is global as it's shared between functions outside DOMContentLoaded
+
+            // Dashboard
+            const addOrderDashboardBtn = document.getElementById('add-order-dashboard-btn');
+            const dashboardOrderCardsMobile = document.getElementById('dashboard-order-cards-mobile');
+            const dashboardOrderTableDesktop = document.getElementById('dashboard-order-table-desktop');
+
+            // Hotel Info
+            const hotelInfoForm = document.getElementById('hotel-info-form');
+
+            // Project Settings
+            const projectSettingsForm = document.getElementById('project-settings-form');
+            const projectNameInput = document.getElementById('project-name'); // Defined here
+            const depositPercentageInput = document.getElementById('deposit-percentage'); // Defined here
+            const weekdayDaysCheckboxes = document.querySelectorAll('input[name="weekday-days"]');
+            const weekendDaysCheckboxes = document.querySelectorAll('input[name="weekend-days"]');
+            const projectRoomTypesCheckboxesContainer = document.getElementById('project-room-types-checkboxes');
+            const dynamicRoomTypePricingDiv = document.getElementById('dynamic-room-type-pricing');
+            const addSpecialDateRangeTriggerBtn = document.getElementById('add-special-date-range-trigger');
+            const specialDateRangesList = document.getElementById('special-date-ranges-list');
+            const existingProjectsList = document.getElementById('existing-projects-list');
+
+            const specialDatePriceModal = document.getElementById('special-date-price-modal');
+            const specialDateRangeDisplay = document.getElementById('special-date-range-display');
+            const specialDateRoomPricesDiv = document.getElementById('special-date-room-prices');
+            const cancelSpecialDatePriceBtn = document.getElementById('cancel-special-date-price');
+            const saveSpecialDatePriceBtn = document.getElementById('save-special-date-price');
+            let currentSpecialDateRangeData = null;
+
+            // Order Booking (Room Assignment)
+            const roomAssignmentGridContainer = document.getElementById('room-assignment-grid-container');
+            const roomAssignCurrentMonthYearDisplay = document.getElementById('room-assign-current-month-year');
+            const roomAssignPrevMonthBtn = document.getElementById('room-assign-prev-month');
+            const roomAssignNextMonthBtn = document.getElementById('room-assign-next-month');
+            const calendarJumpDateInput = document.getElementById('calendar-jump-date');
+            const roomTypeFilterSelect = document.getElementById('room-type-filter');
+            // roomAssignCurrentDate is global
+
+
+            // General UI Event Listeners
+            menuToggle.addEventListener('click', () => { sidebar.classList.toggle('-translate-x-full'); });
+            document.addEventListener('click', (event) => {
+                const isClickInsideSidebar = sidebar.contains(event.target);
+                const isClickOnMenuToggle = menuToggle.contains(event.target);
+                const isSidebarVisibleOnMobile = !sidebar.classList.contains('-translate-x-full');
+                if (isSidebarVisibleOnMobile && !isClickInsideSidebar && !isClickOnMenuToggle && window.innerWidth < 1024) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            });
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) {
+                    sidebar.classList.remove('-translate-x-full');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault(); // Prevent default anchor jump behavior
+                    const contentId = event.currentTarget.id.replace('nav-', ''); // Extract content ID from ID
+                    showContent(contentId);
+                });
+            });
+
+            showContent('dashboard'); // Default view on load
+            renderDashboardOrders(); // Initial render of dashboard orders
+            renderRoomTypes(); // Initial render of room types
+
+
+            // Add Room Modal Listeners
+            if (addRoomBtn) {
+                addRoomBtn.addEventListener('click', () => openAddRoomModal()); // Call without arguments for add mode
+            }
+            if (cancelAddRoomBtn) {
+                cancelAddRoomBtn.addEventListener('click', () => { addRoomModal.classList.add('hidden'); });
+            }
+            if (addRoomModal) {
+                addRoomModal.addEventListener('click', (event) => { if (event.target === addRoomModal) { addRoomModal.classList.add('hidden'); } });
+                document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !addRoomModal.classList.contains('hidden')) { addRoomModal.classList.add('hidden'); } });
+            }
+
+            // Handle Add/Edit Room form submission
+            addRoomForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+
+                const roomName = document.getElementById('room-name').value.trim();
+                const roomImageUrl = document.getElementById('room-image-url').value;
+                const roomCapacity = parseInt(document.getElementById('room-capacity').value);
+                const roomPrice = parseFloat(document.getElementById('room-price').value);
+                const roomDescription = document.getElementById('room-description').value;
+                const roomCount = parseInt(document.getElementById('room-count').value);
+                const startingRoomNumber = document.getElementById('starting-room-number').value.trim();
+
+                // --- Validation ---
+                if (!roomName) { showCustomMessage('請填寫房型名稱。', 'error'); return; }
+                if (isNaN(roomCapacity) || roomCapacity <= 0) { showCustomMessage('容納人數必須是有效的正整數。', 'error'); return; }
+                if (isNaN(roomPrice) || roomPrice <= 0) { showCustomMessage('價格必須是有效的正數。', 'error'); return; }
+
+                if (roomTypeNameCurrentlyEditing) { // Edit Mode
+                    // Check if the new name conflicts with an *existing different* room type
+                    const nameExists = sampleRoomTypes.some(rt => rt.name === roomName && rt.name !== roomTypeNameCurrentlyEditing);
+                    if (nameExists) {
+                        showCustomMessage(`房型名稱 "${roomName}" 已被其他房型使用。`, 'error');
+                        return;
+                    }
+
+                    const roomTypeIndex = sampleRoomTypes.findIndex(rt => rt.name === roomTypeNameCurrentlyEditing);
+                    if (roomTypeIndex !== -1) {
+                        const oldRoomTypeName = sampleRoomTypes[roomTypeIndex].name;
+
+                        // Update room type definition
+                        sampleRoomTypes[roomTypeIndex] = {
+                            name: roomName,
+                            imageUrl: roomImageUrl || 'https://placehold.co/400x200/007BFF/ffffff?text=圖片缺失',
+                            capacity: roomCapacity,
+                            price: roomPrice,
+                            description: roomDescription
+                        };
+
+                        // If room type name changed, update references in other data structures
+                        if (roomName !== oldRoomTypeName) {
+                            // Update sampleRooms
+                            sampleRooms.forEach(room => {
+                                if (room.roomType === oldRoomTypeName) {
+                                    room.roomType = roomName;
+                                }
+                            });
+                            // Update sampleBookings
+                            sampleBookings.forEach(booking => {
+                                if (booking.roomType === oldRoomTypeName) {
+                                    booking.roomType = roomName;
+                                }
+                            });
+                            // Update sampleProjects
+                            sampleProjects.forEach(project => {
+                                // Update applicableRoomTypes
+                                project.applicableRoomTypes = project.applicableRoomTypes.map(rt => rt === oldRoomTypeName ? roomName : rt);
+                                // Update roomTypePrices keys
+                                if (project.roomTypePrices && project.roomTypePrices[oldRoomTypeName]) {
+                                    project.roomTypePrices[roomName] = project.roomTypePrices[oldRoomTypeName];
+                                    delete project.roomTypePrices[oldRoomTypeName];
+                                }
+                                // Update specialDateRanges roomTypePrices keys
+                                project.specialDateRanges.forEach(sdr => {
+                                    if (sdr.roomTypePrices && sdr.roomTypePrices[oldRoomTypeName]) {
+                                        sdr.roomTypePrices[roomName] = sdr.roomTypePrices[oldRoomTypeName];
+                                        delete sdr.roomTypePrices[oldRoomTypeName];
+                                    }
+                                });
+                            });
+                            showCustomMessage(`房型 "${oldRoomTypeName}" 已成功更新為 "${roomName}"！`, 'success', 5000);
+                        } else {
+                            showCustomMessage(`房型 "${roomName}" 已成功更新！`, 'success', 3000);
+                        }
+                    } else {
+                        showCustomMessage('編輯失敗：找不到要更新的房型。', 'error');
+                    }
+
+                } else { // Add Mode (Existing Logic)
+                    if (isNaN(roomCount) || roomCount <= 0) { showCustomMessage('房間總數必須是有效的正整數。', 'error'); return; }
+                    if (!startingRoomNumber || !/^\d+$/.test(startingRoomNumber)) { showCustomMessage('起始房號必須是純數字。', 'error'); return; }
+
+                    const nameExists = sampleRoomTypes.some(rt => rt.name === roomName);
+                    if (nameExists) {
+                        showCustomMessage(`房型名稱 "${roomName}" 已存在，請使用不同的名稱。`, 'error');
+                        return;
+                    }
+
+                    const newRoomType = {
+                        name: roomName,
+                        imageUrl: roomImageUrl || 'https://placehold.co/400x200/007BFF/ffffff?text=圖片缺失',
+                        capacity: roomCapacity,
+                        price: roomPrice,
+                        description: roomDescription
+                    };
+                    sampleRoomTypes.push(newRoomType);
+
+                    const initialRoomNum = parseInt(startingRoomNumber);
+                    const existingRoomNumbers = new Set(sampleRooms.map(r => r.roomNumber));
+                    let roomsAddedCount = 0;
+                    let skippedRooms = [];
+
+                    for (let i = 0; i < roomCount; i++) {
+                        const currentRoomNumber = (initialRoomNum + i).toString();
+                        if (existingRoomNumbers.has(currentRoomNumber)) {
+                            skippedRooms.push(currentRoomNumber);
+                            continue;
+                        }
+                        sampleRooms.push({ roomNumber: currentRoomNumber, roomType: roomName });
+                        roomsAddedCount++;
+                    }
+                    sampleRooms.sort((a, b) => {
+                        const numA = parseInt(a.roomNumber);
+                        const numB = parseInt(b.roomNumber);
+                        if (!isNaN(numA) && !isNaN(numB)) {
+                            return numA - numB;
+                        }
+                        return a.roomNumber.localeCompare(b.roomNumber);
+                    });
+
+                    let successMessage = `房型 "${roomName}" (新增 ${roomsAddedCount} 間房) 已新增成功！`;
+                    if (skippedRooms.length > 0) {
+                        successMessage += ` 注意: 房號 ${skippedRooms.join(', ')} 已存在，已跳過。`;
+                    }
+                    showCustomMessage(successMessage, 'success', 5000);
+                }
+
+                addRoomModal.classList.add('hidden');
+                roomTypeNameCurrentlyEditing = null; // Reset global edit state
+
+                // Re-render all affected UI components
+                renderRoomTypes();
+                populateOrderRoomTypes();
+                populateProjectRoomTypeCheckboxes();
+                renderExistingProjects(); // Re-render projects to ensure room type names are updated
+                renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value);
+            });
+
+
+            // Add/Edit Order Modal Listeners
+            populateOrderRoomTypes(); // Initial call to populate room types in order modal
+            addOrderDashboardBtn.addEventListener('click', () => openAddOrderModal());
+            cancelAddOrderBtn.addEventListener('click', () => { addOrderModal.classList.add('hidden'); });
+            addOrderModal.addEventListener('click', (event) => { if (event.target === addOrderModal) { addOrderModal.classList.add('hidden'); } });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !addOrderModal.classList.contains('hidden')) { addOrderModal.classList.add('hidden'); } });
+
+            addOrderForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const currentOrderId = orderEditIdInput.value;
+                const orderData = {
+                    guestName: document.getElementById('order-guest-name').value,
+                    contactPhone: document.getElementById('order-contact-phone').value,
+                    email: document.getElementById('order-email').value,
+                    roomType: document.getElementById('order-room-type').value,
+                    checkin: document.getElementById('order-checkin-date').value,
+                    checkout: document.getElementById('order-checkout-date').value,
+                    guests: document.getElementById('order-guests').value,
+                    totalAmount: document.getElementById('order-total-amount').value,
+                    assignedRoom: document.getElementById('order-assigned-room').value || null
+                };
+
+                // Basic validation
+                if (!orderData.guestName || !orderData.roomType || !orderData.checkin || !orderData.checkout || !orderData.guests || !orderData.totalAmount) {
+                    showCustomMessage('請填寫所有標記為必填的訂單資訊。', 'error');
+                    return;
+                }
+                if (new Date(orderData.checkin) >= new Date(orderData.checkout)) {
+                    showCustomMessage('退房日期必須晚於入住日期。', 'error');
+                    return;
+                }
+
+
+                if (currentOrderId) {
+                    const index = sampleBookings.findIndex(order => order.id === currentOrderId);
+                    if (index !== -1) {
+                        Object.assign(sampleBookings[index], orderData);
+                        console.log('編輯訂單資料:', sampleBookings[index]);
+                        showCustomMessage(`訂單 ${currentOrderId} 已成功編輯！`, 'success');
+                    }
+                } else {
+                    const newOrderId = '#ORD' + Math.floor(100000 + Math.random() * 900000);
+                    const newOrder = { id: newOrderId, status: '待付款', ...orderData }; // Default status for new orders
+                    sampleBookings.push(newOrder);
+                    console.log('新增訂單資料:', newOrder);
+                    showCustomMessage(`訂單 ${newOrderId} 已新增成功！`, 'success');
+                }
+
+                renderDashboardOrders();
+                addOrderModal.classList.add('hidden');
+                renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value);
+            });
+
+            // Hotel Info Form Listeners
+            if (hotelInfoForm) {
+                hotelInfoForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    const hotelData = {
+                        name: document.getElementById('hotel-name').value,
+                        address: document.getElementById('hotel-address').value,
+                        phone: document.getElementById('hotel-phone').value,
+                        email: document.getElementById('hotel-email').value,
+                        description: document.getElementById('hotel-description').value,
+                        totalRooms: document.getElementById('hotel-total-rooms').value,
+                        foundingYear: document.getElementById('hotel-founding-year').value
+                    };
+                    console.log('儲存飯店資料:', hotelData);
+                    showCustomMessage('飯店資料已成功儲存！', 'success');
+                });
+            }
+
+            // Project Settings Listeners
+            populateProjectRoomTypeCheckboxes(); // Initial call
+            renderExistingProjects(); // Initial call
+
+            addSpecialDateRangeTriggerBtn.addEventListener('click', () => {
+                console.log('[DEBUG] 點擊新增特殊日期區間價格按鈕。');
+                const startDate = document.getElementById('special-range-start').value;
+                const endDate = document.getElementById('special-range-end').value;
+                const selectedRoomTypes = Array.from(document.querySelectorAll('input[name="project-applicable-room-types"]:checked')).map(cb => cb.value);
+
+                if (!startDate || !endDate) {
+                    showCustomMessage('請選擇特殊日期區間的開始和結束日期。', 'warning');
+                    return;
+                }
+                if (new Date(startDate) > new Date(endDate)) {
+                    showCustomMessage('開始日期不能晚於結束日期。', 'error');
+                    return;
+                }
+                if (selectedRoomTypes.length === 0) {
+                    showCustomMessage('請先勾選適用房型，才能設定特殊日期價格。', 'warning');
+                    return;
+                }
+
+                currentSpecialDateRangeData = {
+                    startDate: startDate,
+                    endDate: endDate,
+                    roomTypePrices: {}
+                };
+
+                specialDateRoomPricesDiv.innerHTML = '';
+                selectedRoomTypes.forEach(roomType => {
+                    // Find the default price from sampleRoomTypes for placeholder
+                    const defaultRoomType = sampleRoomTypes.find(rt => rt.name === roomType);
+                    const defaultPrice = defaultRoomType ? defaultRoomType.price : 0;
+
+                    const roomPriceInputHtml = `
+                        <div>
+                            <label for="special-price-${roomType.replace(/\s/g, '_')}" class="block text-gray-700 text-sm font-bold mb-2">${roomType} 價格:</label>
+                            <input type="number" id="special-price-${roomType.replace(/\s/g, '_')}" data-room-type="${roomType}" class="bg-input-light text-gray-800 border p-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-glow" placeholder="例如：${defaultPrice + 500}" min="0" required>
+                        </div>
+                    `;
+                    specialDateRoomPricesDiv.innerHTML += roomPriceInputHtml;
+                });
+
+                specialDateRangeDisplay.textContent = `日期區間: ${startDate} 至 ${endDate}`;
+                specialDatePriceModal.classList.remove('hidden');
+            });
+
+            saveSpecialDatePriceBtn.addEventListener('click', () => {
+                console.log('[DEBUG] 儲存特殊日期區間價格。');
+                const prices = {};
+                let allPricesFilled = true;
+                document.querySelectorAll('#special-date-room-prices input[type="number"]').forEach(input => {
+                    const roomType = input.dataset.roomType;
+                    const price = input.value;
+                    if (!price || parseFloat(price) < 0) {
+                        allPricesFilled = false;
+                    }
+                    prices[roomType] = parseFloat(price);
+                });
+
+                if (!allPricesFilled) {
+                    showCustomMessage('請為所有選擇的房型填寫有效的特殊日期價格。', 'warning');
+                    return;
+                }
+
+                currentSpecialDateRangeData.roomTypePrices = prices;
+                currentSpecialDateRangeData.id = `SDR${Date.now()}`;
+
+                addSpecialDateRangeToListDisplay(currentSpecialDateRangeData);
+                specialDatePriceModal.classList.add('hidden');
+                currentSpecialDateRangeData = null; // Clear temporary data
+
+                document.getElementById('special-range-start').value = '';
+                document.getElementById('special-range-end').value = '';
+            });
+
+            cancelSpecialDatePriceBtn.addEventListener('click', () => {
+                console.log('[DEBUG] 取消特殊日期區間價格設定。');
+                specialDatePriceModal.classList.add('hidden');
+                currentSpecialDateRangeData = null;
+            });
+
+            specialDatePriceModal.addEventListener('click', (event) => {
+                if (event.target === specialDatePriceModal) {
+                    console.log('[DEBUG] 點擊Modal外部，關閉特殊日期區間價格設定。');
+                    specialDatePriceModal.classList.add('hidden');
+                    currentSpecialDateRangeData = null;
+                }
+            });
+
+            projectSettingsForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                console.log('[DEBUG] 提交專案設定表單...');
+
+                const projectName = projectNameInput.value.trim();
+                const depositPercentage = parseFloat(depositPercentageInput.value);
+                const weekdayDays = Array.from(document.querySelectorAll('input[name="weekday-days"]:checked')).map(cb => parseInt(cb.value));
+                const weekendDays = Array.from(document.querySelectorAll('input[name="weekend-days"]:checked')).map(cb => parseInt(cb.value));
+                const selectedRoomTypes = Array.from(document.querySelectorAll('input[name="project-applicable-room-types"]:checked')).map(cb => cb.value);
+
+                // Validation
+                if (!projectName) {
+                    showCustomMessage('請填寫專案名稱。', 'error');
+                    return;
+                }
+                if (isNaN(depositPercentage) || depositPercentage < 0 || depositPercentage > 100) {
+                    showCustomMessage('訂金百分比必須是介於 0 到 100 之間的數字。', 'error');
+                    return;
+                }
+                const allSelectedDays = new Set([...weekdayDays, ...weekendDays]);
+                if (allSelectedDays.size !== 7) {
+                     showCustomMessage('請確保所有星期都被定義為平日或假日。', 'error');
+                     return;
+                }
+                const overlap = weekdayDays.some(day => weekendDays.includes(day));
+                if (overlap) {
+                    showCustomMessage('平日和假日定義有重疊的星期，請重新選擇。', 'error');
+                    return;
+                }
+                if (selectedRoomTypes.length === 0) {
+                    showCustomMessage('請至少選擇一個適用房型。', 'error');
+                    return;
+                }
+
+                const roomTypePrices = {};
+                let allBasePricesFilled = true;
+                selectedRoomTypes.forEach(roomType => {
+                    const weekdayPriceInput = document.getElementById(`base-weekday-price-${roomType.replace(/\s/g, '_')}`);
+                    const weekendPriceInput = document.getElementById(`base-weekend-price-${roomType.replace(/\s/g, '_')}`);
+                    if (!weekdayPriceInput || weekdayPriceInput.value === '' || parseFloat(weekdayPriceInput.value) < 0 ||
+                        !weekendPriceInput || weekendPriceInput.value === '' || parseFloat(weekendPriceInput.value) < 0) {
+                        allBasePricesFilled = false;
+                    }
+                    roomTypePrices[roomType] = {
+                        weekday: parseFloat(weekdayPriceInput.value),
+                        weekend: parseFloat(weekendPriceInput.value)
+                    };
+                });
+
+                if (!allBasePricesFilled) {
+                    showCustomMessage('請為所有選擇的房型填寫有效的平日和假日基礎價格。', 'warning');
+                    return;
+                }
+
+                const newProject = {
+                    id: `PROJ${Date.now()}`,
+                    name: projectName,
+                    depositPercentage: depositPercentage,
+                    applicableRoomTypes: selectedRoomTypes,
+                    weekdayDays: weekdayDays.sort((a,b)=>a-b),
+                    weekendDays: weekendDays.sort((a,b)=>a-b),
+                    roomTypePrices: roomTypePrices,
+                    specialDateRanges: projectSettingsForm._tempSpecialRanges || []
+                };
+
+                sampleProjects.push(newProject);
+                console.log('儲存專案:', newProject);
+                showCustomMessage(`專案 "${projectName}" 已儲存！`, 'success');
+                
+                // Reset form fields and state
+                projectSettingsForm.reset();
+                weekdayDaysCheckboxes.forEach(cb => cb.checked = false);
+                weekendDaysCheckboxes.forEach(cb => cb.checked = false);
+                document.querySelectorAll('input[name="project-applicable-room-types"]').forEach(cb => cb.checked = false);
+                dynamicRoomTypePricingDiv.classList.add('hidden');
+                dynamicRoomTypePricingDiv.innerHTML = '';
+                specialDateRangesList.innerHTML = '';
+                projectSettingsForm._tempSpecialRanges = []; // Clear temporary special ranges for new project
+
+                renderExistingProjects(); // Re-render the list after saving
+            });
+
+            // Order Booking (Room Assignment) Listeners
+            populateRoomTypeFilter(); // Initial call
+            renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value);
+
+            roomAssignPrevMonthBtn.addEventListener('click', () => {
+                roomAssignCurrentDate.setMonth(roomAssignCurrentDate.getMonth() - 1);
+                renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value);
+            });
+            roomAssignNextMonthBtn.addEventListener('click', () => {
+                roomAssignCurrentDate.setMonth(roomAssignCurrentDate.getMonth() + 1);
+                renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value);
+            });
+            calendarJumpDateInput.addEventListener('change', (event) => {
+                const selectedDate = parseDate(event.target.value);
+                if (!isNaN(selectedDate.getTime())) {
+                    roomAssignCurrentDate.setFullYear(selectedDate.getFullYear());
+                    roomAssignCurrentDate.setMonth(selectedDate.getMonth());
+                    renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value);
+                }
+            });
+            roomTypeFilterSelect.addEventListener('change', (event) => {
+                renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), event.target.value);
+            });
+
+            // Order Action Modal Listeners
+            closeOrderActionModalBtn.addEventListener('click', () => {
+                orderActionModal.classList.add('hidden');
+                currentSelectedOrder = null;
+            });
+
+            orderActionModal.addEventListener('click', (event) => {
+                if (event.target === orderActionModal) {
+                    orderActionModal.classList.add('hidden');
+                    currentSelectedOrder = null;
+                }
+            });
+
+            editOrderBtn.addEventListener('click', () => {
+                orderActionModal.classList.add('hidden');
+                if (currentSelectedOrder) {
+                    openAddOrderModal(null, null, null, currentSelectedOrder);
+                }
+            });
+
+            changeRoomBtn.addEventListener('click', () => {
+                if (currentSelectedOrder) {
+                    const newRoomNumber = prompt(`目前訂單 ${currentSelectedOrder.id} 的房間是 ${currentSelectedOrder.assignedRoom}。\n\n請輸入新的房間號：`);
+                    if (newRoomNumber) {
+                        const targetRoom = sampleRooms.find(r => r.roomNumber === newRoomNumber);
+                        if (!targetRoom) {
+                            showCustomMessage('查無此房間號碼，請確認後再試。', 'error');
+                            return;
+                        }
+
+                        let isNewRoomAvailable = true;
+                        let checkinDate = parseDate(currentSelectedOrder.checkin);
+                        let checkoutDate = parseDate(currentSelectedOrder.checkout);
+                        for (let d = new Date(checkinDate); d < checkoutDate; d.setDate(d.getDate() + 1)) {
+                            const bookingOnDay = getRoomBookingsForDate(newRoomNumber, d);
+                            if (bookingOnDay && bookingOnDay.id !== currentSelectedOrder.id) {
+                                isNewRoomAvailable = false;
+                                break;
+                            }
+                        }
+
+                        if (!isNewRoomAvailable) {
+                             showCustomMessage(`房間 ${newRoomNumber} 在此訂單的日期範圍內已被預訂，無法更換。`, 'error');
+                             return;
+                        }
+
+                        const index = sampleBookings.findIndex(order => order.id === currentSelectedOrder.id);
+                        if (index !== -1) {
+                            sampleBookings[index].assignedRoom = newRoomNumber;
+                            sampleBookings[index].roomType = targetRoom.roomType;
+
+                            showCustomMessage(`訂單 ${currentSelectedOrder.id} 已成功更換到房間 ${newRoomNumber} (${targetRoom.roomType})。`, 'success');
+                            orderActionModal.classList.add('hidden');
+                            renderRoomAssignmentCalendar(roomAssignCurrentDate.getFullYear(), roomAssignCurrentDate.getMonth(), roomTypeFilterSelect.value);
+                            renderDashboardOrders();
+                        }
+                    } else if (newRoomNumber === "") {
+                        showCustomMessage("未輸入房間號碼，操作已取消。", 'info');
+                    } else {
+                        showCustomMessage("換房操作已取消。", 'info');
+                    }
+                }
+            });
+
+        }); // End of DOMContentLoaded
+    </script>
+</body>
+</html>
